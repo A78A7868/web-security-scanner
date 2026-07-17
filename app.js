@@ -92,7 +92,23 @@ const portsGrid = document.getElementById('ports-grid');
 const sslDetails = document.getElementById('ssl-details');
 const mitigationCode = document.getElementById('mitigation-code');
 
-const commonPorts = [
+// Simple hash function to get deterministic but varied results per URL
+function getUrlHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash);
+}
+
+let sslInfo = {
+    certDays: 81,
+    certAuthority: "Let's Encrypt (R3)",
+    keySize: "RSA 2048 bits",
+    cipherSuite: "TLS_AES_256_GCM_SHA384"
+};
+
+let commonPorts = [
     { port: 21, service: 'FTP', status: 'closed' },
     { port: 22, service: 'SSH', status: 'closed' },
     { port: 80, service: 'HTTP', status: 'open' },
@@ -101,7 +117,7 @@ const commonPorts = [
     { port: 8080, service: 'HTTP-Alt', status: 'open' }
 ];
 
-const headerChecks = [
+let headerChecks = [
     { header: 'Content-Security-Policy (CSP)', present: false, value: 'N/A', severity: 'High', details: 'Restricts resource loading (Scripts, Styles, Frames) to prevent XSS attacks.' },
     { header: 'Strict-Transport-Security (HSTS)', present: true, value: 'max-age=63072000; includeSubDomains; preload', severity: 'Secure', details: 'Forces clients to communicate via secure HTTPS only.' },
     { header: 'X-Frame-Options', present: false, value: 'N/A', severity: 'Medium', details: 'Prevents Clickjacking by disallowing framing from external origins.' },
@@ -124,22 +140,59 @@ function delay(ms) {
 async function runScan() {
     startScanBtn.disabled = true;
     const url = document.getElementById('target-url').value.trim() || 'example.com';
-    
+    const hash = getUrlHash(url);
+
+    // Deterministically generate ports status based on URL hash
+    commonPorts = [
+        { port: 21, service: 'FTP', status: (hash % 5 === 0) ? 'open' : 'closed' },
+        { port: 22, service: 'SSH', status: (hash % 3 === 0) ? 'open' : 'closed' },
+        { port: 80, service: 'HTTP', status: 'open' },
+        { port: 443, service: 'HTTPS', status: 'open' },
+        { port: 3306, service: 'MySQL', status: (hash % 7 === 0) ? 'open' : 'closed' },
+        { port: 8080, service: 'HTTP-Alt', status: (hash % 2 === 0) ? 'open' : 'closed' }
+    ];
+
+    // Deterministically generate header checks status based on URL hash
+    headerChecks = [
+        { header: 'Content-Security-Policy (CSP)', present: (hash % 4 !== 0), value: (hash % 4 !== 0) ? "default-src 'self' https:; script-src 'self' 'unsafe-inline'" : 'N/A', severity: 'High', details: 'Restricts resource loading (Scripts, Styles, Frames) to prevent XSS attacks.' },
+        { header: 'Strict-Transport-Security (HSTS)', present: (hash % 3 !== 0), value: (hash % 3 !== 0) ? 'max-age=63072000; includeSubDomains; preload' : 'N/A', severity: 'Secure', details: 'Forces clients to communicate via secure HTTPS only.' },
+        { header: 'X-Frame-Options', present: (hash % 2 === 0), value: (hash % 2 === 0) ? 'SAMEORIGIN' : 'N/A', severity: 'Medium', details: 'Prevents Clickjacking by disallowing framing from external origins.' },
+        { header: 'X-Content-Type-Options', present: (hash % 5 !== 0), value: (hash % 5 !== 0) ? 'nosniff' : 'N/A', severity: 'Secure', details: 'Prevents browser MIME sniffing vulnerabilities.' },
+        { header: 'Referrer-Policy', present: (hash % 3 === 0), value: (hash % 3 === 0) ? 'strict-origin-when-cross-origin' : 'N/A', severity: 'Low', details: 'Controls how much referrer information is sent with requests.' }
+    ];
+
+    const certDays = (hash % 90) + 10;
+    const certAuthority = (hash % 2 === 0) ? "Let's Encrypt (R3)" : ((hash % 3 === 0) ? "DigiCert Global Root G2" : "Cloudflare Inc ECC CA-3");
+    const keySize = (hash % 2 === 0) ? "ECDSA 256 bits" : "RSA 2048 bits";
+    const cipherSuite = (hash % 2 === 0) ? "TLS_AES_256_GCM_SHA384" : "TLS_CHACHA20_POLY1305_SHA256";
+    sslInfo = {
+        certDays,
+        certAuthority,
+        keySize,
+        cipherSuite
+    };
+
     terminalLog.innerHTML = '';
     logToTerminal(`Initializing Security Scan on ${url}...`, 'system-msg');
     
     await delay(800);
     logToTerminal(`Resolving host IP addresses for ${url}...`, 'info-msg');
     await delay(600);
-    logToTerminal(`Host IP resolved to: 104.21.36.19 (Cloudflare Edge Node)`, 'success-msg');
+    const ipByte2 = 21 + (hash % 10);
+    const ipByte3 = 36 + (hash % 50);
+    const ipByte4 = 19 + (hash % 100);
+    logToTerminal(`Host IP resolved to: 104.${ipByte2}.${ipByte3}.${ipByte4} (Cloudflare Edge Node)`, 'success-msg');
     
     if (activeProfile === 'full' || activeProfile === 'headers') {
         await delay(800);
         logToTerminal(`Fetching HTTP/1.1 and HTTP/2 headers...`, 'info-msg');
         await delay(1000);
         logToTerminal(`Parsing HTTP Response Headers...`, 'success-msg');
-        logToTerminal(`ALERT: Content-Security-Policy header is missing.`, 'warn-msg');
-        logToTerminal(`ALERT: X-Frame-Options header is missing.`, 'warn-msg');
+        headerChecks.forEach(c => {
+            if (!c.present) {
+                logToTerminal(`ALERT: ${c.header.split(' ')[0]} header is missing.`, 'warn-msg');
+            }
+        });
     }
 
     if (activeProfile === 'full' || activeProfile === 'ports') {
@@ -155,9 +208,9 @@ async function runScan() {
         await delay(800);
         logToTerminal(`Initiating TLS 1.3 handshake negotiation...`, 'info-msg');
         await delay(700);
-        logToTerminal(`SSL Handshake complete. Cipher: TLS_AES_256_GCM_SHA384`, 'success-msg');
-        logToTerminal(`Certificate Authority: Let's Encrypt (R3)`, 'success-msg');
-        logToTerminal(`Certificate Validity: 81 days remaining`, 'success-msg');
+        logToTerminal(`SSL Handshake complete. Cipher: ${sslInfo.cipherSuite}`, 'success-msg');
+        logToTerminal(`Certificate Authority: ${sslInfo.certAuthority}`, 'success-msg');
+        logToTerminal(`Certificate Validity: ${sslInfo.certDays} days remaining`, 'success-msg');
     }
 
     await delay(600);
@@ -259,11 +312,11 @@ function renderResults() {
         </div>
         <div class="ssl-row">
             <span class="ssl-label">Selected Cipher Suite</span>
-            <span class="ssl-value">TLS_AES_256_GCM_SHA384 (256-bit keys)</span>
+            <span class="ssl-value">${sslInfo.cipherSuite}</span>
         </div>
         <div class="ssl-row">
             <span class="ssl-label">Certificate Authority</span>
-            <span class="ssl-value">Let's Encrypt (R3)</span>
+            <span class="ssl-value">${sslInfo.certAuthority}</span>
         </div>
         <div class="ssl-row">
             <span class="ssl-label">Signature Algorithm</span>
@@ -271,7 +324,11 @@ function renderResults() {
         </div>
         <div class="ssl-row">
             <span class="ssl-label">Key Size</span>
-            <span class="ssl-value">RSA 2048 bits</span>
+            <span class="ssl-value">${sslInfo.keySize}</span>
+        </div>
+        <div class="ssl-row">
+            <span class="ssl-label">Validity Remaining</span>
+            <span class="ssl-value">${sslInfo.certDays} days</span>
         </div>
     `;
 
