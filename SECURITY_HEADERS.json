@@ -1,0 +1,19 @@
+{
+  "headers": [
+    {
+      "name": "Content-Security-Policy",
+      "required": true,
+      "recommendedValue": "default-src 'self'"
+    },
+    {
+      "name": "Strict-Transport-Security",
+      "required": true,
+      "recommendedValue": "max-age=63072000; includeSubDomains; preload"
+    },
+    {
+      "name": "X-Frame-Options",
+      "required": true,
+      "recommendedValue": "SAMEORIGIN"
+    }
+  ]
+}
