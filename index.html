@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldScan // Web Security Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="logo">
+                <i class="fa-solid fa-shield-halved logo-icon"></i>
+                <span class="logo-text">Shield<span class="accent-text">Scan</span></span>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator online"></span>
+                <span class="status-label">SecEngine v2.4-Active</span>
+            </div>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <main class="dashboard-grid">
+            <!-- Left Side: Control Panel & Target Selector -->
+            <section class="panel control-panel glass">
+                <h2 class="panel-title"><i class="fa-solid fa-crosshairs"></i> Target Configuration</h2>
+                
+                <div class="input-group">
+                    <label for="target-url">Target Host / URL</label>
+                    <div class="url-input-wrapper">
+                        <span class="protocol-badge">HTTPS</span>
+                        <input type="text" id="target-url" placeholder="example.com" value="jecrcuniversity.edu.in">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Scan Profile</label>
+                    <div class="scan-profiles">
+                        <div class="profile-card active" data-profile="full">
+                            <i class="fa-solid fa-circle-nodes"></i>
+                            <div class="profile-info">
+                                <h3>Full Audit</h3>
+                                <p>Headers, SSL & Ports</p>
+                            </div>
+                        </div>
+                        <div class="profile-card" data-profile="headers">
+                            <i class="fa-solid fa-code"></i>
+                            <div class="profile-info">
+                                <h3>Headers Only</h3>
+                                <p>Security header audit</p>
+                            </div>
+                        </div>
+                        <div class="profile-card" data-profile="ports">
+                            <i class="fa-solid fa-network-wired"></i>
+                            <div class="profile-info">
+                                <h3>Port Scan</h3>
+                                <p>Recon open services</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="start-scan-btn" class="btn primary-btn btn-glow">
+                    <span class="btn-text">Execute Scan</span>
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </section>
+
+            <!-- Right Side Top: Live Scanner Terminal -->
+            <section class="panel terminal-panel glass">
+                <h2 class="panel-title"><i class="fa-solid fa-terminal"></i> Scan Console Log</h2>
+                <div class="terminal-body" id="terminal-log">
+                    <div class="terminal-line system-msg">ShieldScan OS v2.4 initialized. Ready to launch scan.</div>
+                    <div class="terminal-line hint-msg">Enter a URL above and click 'Execute Scan'.</div>
+                </div>
+            </section>
+
+            <!-- Bottom Left: Vulnerability Stats Gauges -->
+            <section class="panel stats-panel glass">
+                <h2 class="panel-title"><i class="fa-solid fa-chart-pie"></i> Risk Assessment</h2>
+                <div class="stats-container">
+                    <div class="score-circle-wrapper">
+                        <div class="score-circle" id="score-circle" style="--percent: 100;">
+                            <div class="score-value" id="score-val">100</div>
+                            <div class="score-label">Sec Score</div>
+                        </div>
+                    </div>
+                    <div class="vulnerability-summary">
+                        <div class="vuln-stat critical" id="stat-critical">
+                            <span class="count">0</span>
+                            <span class="label">Critical</span>
+                        </div>
+                        <div class="vuln-stat high" id="stat-high">
+                            <span class="count">0</span>
+                            <span class="label">High</span>
+                        </div>
+                        <div class="vuln-stat medium" id="stat-medium">
+                            <span class="count">0</span>
+                            <span class="label">Medium</span>
+                        </div>
+                        <div class="vuln-stat low" id="stat-low">
+                            <span class="count">0</span>
+                            <span class="label">Low</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bottom Right: Detailed Report Tabs -->
+            <section class="panel report-panel glass">
+                <div class="report-header">
+                    <h2 class="panel-title"><i class="fa-solid fa-file-shield"></i> Security Report</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="headers"><i class="fa-solid fa-heading"></i> Headers</button>
+                        <button class="tab-btn" data-tab="ports"><i class="fa-solid fa-network-wired"></i> Ports</button>
+                        <button class="tab-btn" data-tab="ssl"><i class="fa-solid fa-lock"></i> SSL/TLS</button>
+                        <button class="tab-btn" data-tab="mitigations"><i class="fa-solid fa-wrench"></i> Mitigate</button>
+                    </div>
+                </div>
+
+                <div class="tab-content active" id="tab-headers">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Security Header</th>
+                                    <th>Status</th>
+                                    <th>Value</th>
+                                    <th>Impact / Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="headers-tbody">
+                                <tr>
+                                    <td colspan="4" class="empty-state">Execute a scan to view HTTP Header analysis</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-ports">
+                    <div class="ports-grid" id="ports-grid">
+                        <!-- Ports will be dynamically generated here -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-ssl">
+                    <div class="ssl-details" id="ssl-details">
+                        <div class="empty-state">Execute a scan to retrieve SSL/TLS handshake parameters</div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-mitigations">
+                    <div class="mitigation-wrapper">
+                        <div class="mitigation-selector">
+                            <button class="server-btn active" data-server="nginx">Nginx</button>
+                            <button class="server-btn" data-server="apache">Apache</button>
+                            <button class="server-btn" data-server="iis">IIS</button>
+                        </div>
+                        <pre class="code-box"><code id="mitigation-code">// Select server type and perform a scan to generate code templates</code></pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Background Matrix Canvas for cybersecurity effect -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <script src="app.js"></script>
+</body>
+</html>
