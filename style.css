@@ -1,27 +1,28 @@
 /* Custom properties / Design System */
 :root {
-    --bg-dark: #070913;
-    --panel-bg: rgba(13, 17, 35, 0.7);
-    --panel-border: rgba(99, 102, 241, 0.2);
-    --panel-border-active: rgba(99, 102, 241, 0.5);
+    --bg-dark: #05050c;
+    --panel-bg: rgba(10, 10, 22, 0.45);
+    --panel-border: rgba(124, 58, 237, 0.2);
+    --panel-border-active: rgba(175, 129, 255, 0.5);
     
-    --primary: #6366f1;
-    --primary-glow: rgba(99, 102, 241, 0.4);
-    --accent: #00f2fe;
+    --primary: #7c3aed; /* Violet */
+    --primary-glow: rgba(124, 58, 237, 0.3);
+    --accent: #af81ff; /* Lavender */
+    --cyan: #00f2fe;
     
     /* Status colors */
-    --critical: #ef4444;
-    --high: #f97316;
-    --medium: #eab308;
-    --low: #3b82f6;
-    --secure: #10b981;
+    --critical: #ff5555;
+    --high: #ffb86c;
+    --medium: #f1fa8c;
+    --low: #8be9fd;
+    --secure: #50fa7b;
     
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
+    --text-main: #f8f8f2;
+    --text-muted: #8be9fd;
     
-    --font-sans: 'Outfit', sans-serif;
+    --font-sans: 'Inter', sans-serif;
     --font-mono: 'Fira Code', monospace;
-    --font-heading: 'Space Grotesk', sans-serif;
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
 }
 
 * {
@@ -41,14 +42,52 @@ body {
 /* Background Effects */
 .glass-bg {
     position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
-                radial-gradient(circle at 70% 60%, rgba(0, 242, 254, 0.12) 0%, transparent 45%);
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #05050c;
+    z-index: -3;
+    overflow: hidden;
+}
+
+.glass-bg::before, .glass-bg::after {
+    content: "";
+    position: absolute;
+    border-radius: 45%;
+    filter: blur(100px);
     z-index: -2;
-    pointer-events: none;
+    opacity: 0.45;
+}
+
+.glass-bg::before {
+    background: #7c3aed;
+    width: 600px;
+    height: 600px;
+    bottom: -150px;
+    left: -150px;
+    animation: spin-slow 20s linear infinite;
+}
+
+.glass-bg::after {
+    background: #3f00aa;
+    width: 500px;
+    height: 500px;
+    top: -100px;
+    right: -100px;
+    animation: spin-reverse 25s linear infinite;
+}
+
+@keyframes spin-slow {
+    0% { transform: rotate(0deg) translate(0, 0); }
+    50% { transform: rotate(180deg) translate(100px, 50px); }
+    100% { transform: rotate(360deg) translate(0, 0); }
+}
+
+@keyframes spin-reverse {
+    0% { transform: rotate(360deg) translate(0, 0); }
+    50% { transform: rotate(180deg) translate(-80px, -40px); }
+    100% { transform: rotate(0deg) translate(0, 0); }
 }
 
 .grid-overlay {
@@ -57,9 +96,9 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    background-image: linear-gradient(to right, rgba(124, 58, 237, 0.02) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(124, 58, 237, 0.02) 1px, transparent 1px);
     z-index: -1;
     pointer-events: none;
 }
@@ -156,9 +195,9 @@ body {
 /* Panel Styles */
 .panel {
     background: var(--panel-bg);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--panel-border);
-    border-radius: 20px;
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -168,7 +207,7 @@ body {
 
 .panel:hover {
     border-color: var(--panel-border-active);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .panel-title {
@@ -296,32 +335,68 @@ body {
 
 /* Buttons */
 .btn {
-    display: flex;
+    position: relative;
+    display: inline-flex;
     justify-content: center;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
-    border: none;
-    border-radius: 12px;
+    padding: 0.9rem 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 30px;
     font-family: var(--font-heading);
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.primary-btn {
-    background: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 700;
     color: white;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 1;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-glow:hover {
-    box-shadow: 0 0 20px var(--primary-glow);
+.btn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150%;
+    height: 150%;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: -1;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover {
+    color: black;
+    border-color: white;
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
 }
 
-.btn-glow:active {
+.btn:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.btn:active {
     transform: translateY(0);
+}
+
+.primary-btn {
+    background: rgba(124, 58, 237, 0.1);
+    border-color: var(--primary);
+    color: var(--accent);
+}
+
+.primary-btn::before {
+    background: var(--primary);
+}
+
+.primary-btn:hover {
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 10px 25px var(--primary-glow);
 }
 
 /* Terminal Log Panel */
